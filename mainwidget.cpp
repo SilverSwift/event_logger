@@ -14,10 +14,10 @@ MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
 
     QMenu* pmnu = new QMenu("&Menu");
 
-    QAction* aboutAction = pmnu->addAction("&About Qt",
-                        qApp,
-                        SLOT(aboutQt()),
-                        Qt::CTRL + Qt::Key_Q);
+    pmnu->addAction("&About Qt",
+                    qApp,
+                    &QApplication::aboutQt,
+                    QKeySequence::HelpContents);
 
     pmnu->addSeparator();
 

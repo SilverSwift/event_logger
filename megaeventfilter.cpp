@@ -10,32 +10,32 @@
 MegaEventFilter::MegaEventFilter(QObject *parent) : QObject(parent)
 {
     qApp->installEventFilter(this);
-    jsonArray = QJsonArray();
 }
 
 bool MegaEventFilter::eventFilter(QObject* watched, QEvent* event)
 {
-    if(watched->inherits("QWidgetWindow")){
+    if(watched->inherits("QWidgetWindow"))
         return QObject::eventFilter(watched, event);
-    }
 
-    if( (event->type() == QEvent::MouseButtonPress) ||
-            (event->type() == QEvent::KeyPress)){
+    if(     (event->type() != QEvent::MouseButtonPress) &&
+            (event->type() != QEvent::KeyPress))
+        return false;
 
-        QJsonObject eventObject;
-        eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
-        eventObject.insert("objectName", QJsonValue::fromVariant(watched->objectName()));
-        eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
+    QJsonObject eventObject;
+    eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
+    eventObject.insert("objectName", QJsonValue::fromVariant(watched->objectName()));
+    eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
 
-        eventObject.insert("parent", this->findParentObject(watched).value("parent"));
+    eventObject.insert("parent", this->findParentObject(watched).value("parent"));
 
-        switch (event->type()) {
+    switch (event->type()) {
         case QEvent::MouseButtonPress: {
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
             eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
             eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
             eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
-            //модификаторы
+
+            //TO DO: modifiers
             break;
         }
         case QEvent::KeyPress: {
@@ -47,15 +47,13 @@ bool MegaEventFilter::eventFilter(QObject* watched, QEvent* event)
         }
 
         default: {
-            qWarning("Ошибка в обработчике событий!");
-            }
+            qWarning("Event handler error!!! Pizdets!!!");
         }
-
-        jsonArray.append(eventObject);
-
-        qDebug()<<Q_FUNC_INFO<<watched->metaObject()->className()<<event->type();
-
     }
+
+    jsonArray.append(eventObject);
+
+    qDebug()<<Q_FUNC_INFO<<watched->metaObject()->className()<<event->type();
 
     return false;
 }
