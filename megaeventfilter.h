@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QJsonArray>
+#include <QApplication>
+#include <QSet>
 
 class MegaEventFilter : public QObject
 {
@@ -18,8 +20,12 @@ public slots:
 
 private:
     QJsonArray jsonArray;
+    QSet<QString> objectNames;
     void saveJsonFile();
-    QJsonObject findParentObject(QObject* obj);
+    QString findParentObject(QObject* obj);
+    void setWidgetName(); //setObjectName
+    QString createWidgetName(QString str);
+    void handleWidgetName(QWidget* w);
 };
 
 #endif // MEGAEVENTFILTER_H

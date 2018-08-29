@@ -9,6 +9,7 @@ int main(int argc, char** argv)
 
     MainWidget wgt;
     wgt.show();
+    wgt.setObjectName("MainWindowTest");
 
     MegaEventFilter filter;
 
