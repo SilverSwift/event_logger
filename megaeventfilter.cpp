@@ -8,14 +8,17 @@
 #include <QtWidgets>
 #include <QStringBuilder>
 #include <QGuiApplication>
+#include <QTime>
 
 namespace {
     static const char* PropertyName = "id_name";
+    static QTime runtime;
 }
 
 MegaEventFilter::MegaEventFilter(QObject *parent) : QObject(parent)
 {
 
+    runtime.start();
     qApp->installEventFilter(this);
     connect(this, &MegaEventFilter::inspect,
             this, &MegaEventFilter::onInspect,
@@ -69,18 +72,17 @@ void MegaEventFilter::saveJsonFile()
 
 QString MegaEventFilter::findParentObject(QObject* obj)
 {
-    QString str;
-    while(obj && obj->parent()){
-        QString parentName = obj->property(PropertyName).toString();
-        if(str.isEmpty())
-            str = parentName;
-        else
-            str = parentName % QChar('.') % str;
 
-        obj = obj->parent();
-    }
+    if (!obj || !obj->parent() )
+        return QString();
 
-    return str;
+    QString head = this->findParentObject(obj->parent());
+    if (!head.isEmpty())
+        head += ".";
+    head += obj->parent()->property(PropertyName).toString();
+
+    return head;
+
 }
 
 void MegaEventFilter::onInspect()
@@ -124,8 +126,12 @@ QJsonObject MegaEventFilter::logEntry(QObject* watched, QEvent* event)
     eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
     eventObject.insert("objectName", QJsonValue::fromVariant(watched->property(PropertyName).toString()));
     eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
+    eventObject.insert("timestamp", QJsonValue::fromVariant(runtime.elapsed()));
 
     eventObject.insert("parent", this->findParentObject(watched));
+    qDebug()<<watched->property(PropertyName).toString();
+    if (watched->parent())
+        qDebug()<<watched->parent()->property(PropertyName).toString();
 
     return eventObject;
 }

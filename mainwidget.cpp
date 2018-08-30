@@ -12,7 +12,7 @@ MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
 {
     QMenuBar *menuBar = new QMenuBar(this);
 
-    QMenu* pmnu = new QMenu("&Menu");
+    QMenu* pmnu = new QMenu("&Menu", menuBar);
 
     pmnu->addAction("&About Qt",
                     qApp,
