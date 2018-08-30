@@ -9,10 +9,18 @@
 #include <QStringBuilder>
 #include <QGuiApplication>
 
+namespace {
+    static const char* PropertyName = "id_name";
+}
+
 MegaEventFilter::MegaEventFilter(QObject *parent) : QObject(parent)
 {
+
     qApp->installEventFilter(this);
-    this->setWidgetName();
+    connect(this, &MegaEventFilter::inspect,
+            this, &MegaEventFilter::onInspect,
+            Qt::QueuedConnection);
+    emit inspect();
 }
 
 bool MegaEventFilter::eventFilter(QObject* watched, QEvent* event)
@@ -22,47 +30,23 @@ bool MegaEventFilter::eventFilter(QObject* watched, QEvent* event)
 
     if(     (event->type() != QEvent::MouseButtonPress) &&
             (event->type() != QEvent::KeyPress) &&
-            (event->type() != QEvent::Create))
+            (event->type() != QEvent::ChildAdded))
         return false;
 
-    if(event->type() == QEvent::Create){
-        this->setWidgetName();
-    }else{
-        QJsonObject eventObject;
-        eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
-        eventObject.insert("objectName", QJsonValue::fromVariant(watched->objectName()));
-        eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
+    switch (event->type()) {
+        case QEvent::KeyPress:
+        case QEvent::MouseButtonPress:
+            this->logInputEvent(watched, event);
+            break;
 
-        eventObject.insert("parent", this->findParentObject(watched));
+        case QEvent::ChildAdded:
+            emit inspect();
+            return false;
 
-        switch (event->type()) {
-            case QEvent::MouseButtonPress: {
-                QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-                eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
-                eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
-                eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
-
-                //TO DO: modifiers
-                break;
-            }
-            case QEvent::KeyPress: {
-                QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-                eventObject.insert("text", QJsonValue::fromVariant(keyEvent->key()));
-                //eventObject.insert("modifiers", QJsonValue::fromVariant(QGuiApplication::keyboardModifiers());
-                break;
-
-            }
-
-            default: {
-                qWarning("Event handler error!!! Pizdets!!!");
-            }
-        }
-
-        jsonArray.append(eventObject);
-
+        default:
+            qWarning()<<"unhandled event! error!";
+            break;
     }
-
-    qDebug()<<Q_FUNC_INFO<<watched->metaObject()->className()<<event->type();
 
     return false;
 }
@@ -87,55 +71,79 @@ QString MegaEventFilter::findParentObject(QObject* obj)
 {
     QString str;
     while(obj && obj->parent()){
-        QString parentName = obj->parent()->objectName();
-        if(str.length()==0){
+        QString parentName = obj->property(PropertyName).toString();
+        if(str.isEmpty())
             str = parentName;
-        }
-        else {
+        else
             str = parentName % QChar('.') % str;
-        }
+
         obj = obj->parent();
     }
 
     return str;
 }
 
-void MegaEventFilter::setWidgetName()
+void MegaEventFilter::onInspect()
 {
-    foreach (QWidget *parentWidget, QApplication::topLevelWidgets()) {
-        this->handleWidgetName(parentWidget);
+    foreach (QWidget *parentWidget, QApplication::topLevelWidgets())
+        this->nameWidget(parentWidget);
+}
 
-        QList<QWidget *> widgets = parentWidget->findChildren<QWidget *>();
-        foreach (QWidget* w, widgets){
-            this->handleWidgetName(w);
+void MegaEventFilter::logInputEvent(QObject *watched, QEvent *event)
+{
+    QJsonObject eventObject = this->logEntry(watched, event);
+
+    switch (event->type()) {
+        case QEvent::MouseButtonPress: {
+            QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+            eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
+            eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
+            eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
+            break;
+        }
+        case QEvent::KeyPress: {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+            eventObject.insert("text", QJsonValue::fromVariant(keyEvent->key()));
+            break;
         }
 
-     }
+        default:
+            qWarning()<<"unhandled event! error!";
+            return;
+    }
 
+    QVariant modifier(qApp->keyboardModifiers());
+    eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
+    jsonArray.append(eventObject);
 }
 
-void MegaEventFilter::handleWidgetName(QWidget* w)
+QJsonObject MegaEventFilter::logEntry(QObject* watched, QEvent* event)
 {
-    QString name = w->objectName();
+    QJsonObject eventObject;
+
+    eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
+    eventObject.insert("objectName", QJsonValue::fromVariant(watched->property(PropertyName).toString()));
+    eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
+
+    eventObject.insert("parent", this->findParentObject(watched));
+
+    return eventObject;
+}
+
+void MegaEventFilter::nameWidget(QWidget* widget)
+{
+    QString name = widget->property(PropertyName).toString();
     if(name.isEmpty()){
-        name = this->createWidgetName(w->metaObject()->className());
-        w->setObjectName(name);
+        name = widget->metaObject()->className();
+        name += QString::number(mCnt++);
+        widget->setProperty(PropertyName, name);
     }
 
-    if(! objectNames.contains(name)){
-        objectNames.insert(name);
-        qDebug(qUtf8Printable(w->objectName()));
-    }
+    QWidgetList wgts = widget->findChildren<QWidget*>(QString(),
+                                                      Qt::FindDirectChildrenOnly);
+
+    foreach (QWidget* wgt, wgts)
+        this->nameWidget(wgt);
 
 }
 
-QString MegaEventFilter::createWidgetName(QString str)
-{
-    int objectNum = 1;
-    while(objectNames.contains(str + QString::number(objectNum))){
-        objectNum++;
-    }
-
-    return str + QString::number(objectNum);
-
-}
