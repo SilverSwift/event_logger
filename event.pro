@@ -5,8 +5,17 @@ QT += \
 SOURCES += \
     main.cpp \
     mainwidget.cpp \
-    megaeventfilter.cpp
+    abstractSerializer.cpp \
+    eventrecorder.cpp \
+    abstractrecorder.cpp \
+    fileserializer.cpp \
+    testcontrol.cpp
 
 HEADERS += \
     mainwidget.h \
-    megaeventfilter.h
+    abstractplayer.h \
+    eventrecorder.h \
+    abstractrecorder.h \
+    abstractserializer.h \
+    fileserializer.h \
+    testcontrol.h
