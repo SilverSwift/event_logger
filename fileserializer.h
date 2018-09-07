@@ -12,6 +12,7 @@ public:
     ~FileSerializer() override;
 
     virtual bool write(QByteArray data) override;
+    virtual QByteArray read() override;
 
 private:
     QString mFileName;

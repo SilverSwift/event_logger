@@ -11,6 +11,7 @@ public:
     virtual ~AbstractSerializer();
 
     virtual bool write(QByteArray data) = 0;
+    virtual QByteArray read() = 0;
 
 };
 

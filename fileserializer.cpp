@@ -26,3 +26,16 @@ bool FileSerializer::write(QByteArray data)
 
     return true;
 }
+
+QByteArray FileSerializer::read()
+{
+    QFile file (mFileName);
+    if (!file.open(QFile::ReadOnly))
+        return QByteArray();
+
+    QByteArray data = file.readAll();
+
+    file.close();
+
+    return data;
+}

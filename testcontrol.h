@@ -10,9 +10,16 @@ public:
     explicit TestControl(QWidget *parent = nullptr);
 
 signals:
+    void startRecord();
+    void startPlay();
+    void stopRecord();
+    void stopPlay();
+public slots:
+    void changeMode(int);
     void startClicked();
     void stopClicked();
-
+private:
+    bool recordMode = true;
 };
 
 #endif // TESTCONTROL_H

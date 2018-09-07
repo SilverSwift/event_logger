@@ -4,6 +4,7 @@
 
 #include "mainwidget.h"
 
+#include "eventplayer.h"
 #include "eventrecorder.h"
 #include "fileserializer.h"
 #include "testcontrol.h"
@@ -17,6 +18,7 @@ int main(int argc, char** argv)
     wgt.setObjectName("MainWindowTest");
 
     EventRecorder recorder(new FileSerializer("output"));
+    EventPlayer player(new FileSerializer("output"));
 
     TestControl testWidget;
     testWidget.show();

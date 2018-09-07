@@ -92,6 +92,8 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
         case QEvent::KeyPress: {
             QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
             eventObject.insert("text", QJsonValue::fromVariant(keyEvent->key()));
+            QVariant modifier(qApp->keyboardModifiers());
+            eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
             break;
         }
 
@@ -100,8 +102,6 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             return;
     }
 
-    QVariant modifier(qApp->keyboardModifiers());
-    eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
     jsonArray.append(eventObject);
 }
 
@@ -146,5 +146,5 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
             break;
     }
 
-    return false;
+return false;
 }

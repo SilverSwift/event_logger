@@ -9,7 +9,9 @@ SOURCES += \
     eventrecorder.cpp \
     abstractrecorder.cpp \
     fileserializer.cpp \
-    testcontrol.cpp
+    testcontrol.cpp \
+    abstractplayer.cpp \
+    eventplayer.cpp
 
 HEADERS += \
     mainwidget.h \
@@ -18,4 +20,5 @@ HEADERS += \
     abstractrecorder.h \
     abstractserializer.h \
     fileserializer.h \
-    testcontrol.h
+    testcontrol.h \
+    eventplayer.h
