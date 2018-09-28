@@ -5,9 +5,11 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QWidget>
+#include <QMessageBox>
 
 namespace {
     static const char* PropertyName = "id_name";
@@ -52,12 +54,6 @@ QString EventRecorder::findParentObject(QObject *obj)
     head += obj->parent()->property(PropertyName).toString();
 
     return head;
-}
-
-void EventRecorder::inspect()
-{
-    foreach (QWidget *parentWidget, QApplication::topLevelWidgets())
-        this->nameWidget(parentWidget);
 }
 
 QJsonObject EventRecorder::logEntry(QObject *watched, QEvent *event)
@@ -105,41 +101,22 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
     jsonArray.append(eventObject);
 }
 
-void EventRecorder::nameWidget(QWidget *widget)
-{
-    QString name = widget->property(PropertyName).toString();
-    if(name.isEmpty()){
-        name = widget->metaObject()->className();
-        name += QString::number(mCnt++);
-        widget->setProperty(PropertyName, name);
-    }
-
-    QWidgetList wgts = widget->findChildren<QWidget*>(QString(),
-                                                      Qt::FindDirectChildrenOnly);
-
-    foreach (QWidget* wgt, wgts)
-        this->nameWidget(wgt);
-}
-
 bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
 {
     if(watched->inherits("QWidgetWindow"))
         return QObject::eventFilter(watched, event);
 
     if(     (event->type() != QEvent::MouseButtonPress) &&
-            (event->type() != QEvent::KeyPress) &&
-            (event->type() != QEvent::ChildAdded))
+            (event->type() != QEvent::KeyPress) )
         return false;
 
     switch (event->type()) {
         case QEvent::KeyPress:
-        case QEvent::MouseButtonPress:
-            this->logInputEvent(watched, event);
+        case QEvent::MouseButtonPress: {
+        qDebug()<<"Mouse click!";
+        this->logInputEvent(watched, event);
+        }
             break;
-
-        case QEvent::ChildAdded:
-            emit inspect();
-            return  false;
 
         default:
             qWarning()<<"unhandled event! error!";

@@ -2,11 +2,12 @@
 
 #include <QFile>
 
+#include <QDebug>
+
 FileSerializer::FileSerializer(QString fileName, QObject *parent) :
     AbstractSerializer(parent)
   , mFileName(fileName)
 {
-
 }
 
 FileSerializer::~FileSerializer()
@@ -30,8 +31,11 @@ bool FileSerializer::write(QByteArray data)
 QByteArray FileSerializer::read()
 {
     QFile file (mFileName);
-    if (!file.open(QFile::ReadOnly))
+    //if (!file.open(QFile::ReadOnly)){
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        qDebug()<< file.errorString();
         return QByteArray();
+    }
 
     QByteArray data = file.readAll();
 

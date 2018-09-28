@@ -20,14 +20,11 @@ public slots:
 
 protected:
     QString findParentObject(QObject* obj);
-    void inspect();
     QJsonObject logEntry(QObject *watched, QEvent *event);
     void logInputEvent(QObject *watched, QEvent *event);
-    void nameWidget(QWidget* widget);
 
 private:
     QJsonArray jsonArray;
-    int mCnt = 0;
 };
 
 #endif // EVENTRECORDER_H

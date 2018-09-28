@@ -8,6 +8,7 @@
 #include "eventrecorder.h"
 #include "fileserializer.h"
 #include "testcontrol.h"
+#include "widgetnamer.h"
 
 int main(int argc, char** argv)
 {
@@ -17,17 +18,25 @@ int main(int argc, char** argv)
     wgt.show();
     wgt.setObjectName("MainWindowTest");
 
+    WidgetNamer::startWidgetNamer();
+
     EventRecorder recorder(new FileSerializer("output"));
     EventPlayer player(new FileSerializer("output"));
 
     TestControl testWidget;
     testWidget.show();
 
-    QObject::connect(&testWidget, &TestControl::startClicked,
+    QObject::connect(&testWidget, &TestControl::startRecord,
                      &recorder, &AbstractRecorder::start);
 
-    QObject::connect(&testWidget, &TestControl::stopClicked,
+    QObject::connect(&testWidget, &TestControl::stopRecord,
                      &recorder, &AbstractRecorder::stop);
+
+    QObject::connect(&testWidget, &TestControl::startPlay,
+                     &player, &AbstractPlayer::start);
+
+    QObject::connect(&testWidget, &TestControl::stopPlay,
+                     &player, &AbstractPlayer::stop);
 
     return app.exec();
 }

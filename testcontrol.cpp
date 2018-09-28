@@ -6,22 +6,26 @@
 #include <QRadioButton>
 #include <QVBoxLayout>
 
+#include <QDebug>
+
 TestControl::TestControl(QWidget *parent) : QWidget(parent)
 {
-    QRadioButton* recordMode = new QRadioButton("Record");
-    QRadioButton* playMode = new QRadioButton("Play");
-    recordMode->setChecked(true);
+    QRadioButton* recordModeButton = new QRadioButton("Record");
+    QRadioButton* playModeButton = new QRadioButton("Play");
+    recordModeButton->setChecked(true);
 
     QButtonGroup* buttonGroup = new QButtonGroup();
-    buttonGroup->addButton(recordMode);
-    buttonGroup->addButton(playMode);
+    buttonGroup->addButton(recordModeButton);
+    buttonGroup->addButton(playModeButton);
+    buttonGroup->setId(recordModeButton, 1);
+    buttonGroup->setId(playModeButton, 0);
 
-    connect(buttonGroup,  QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked),
+    connect(buttonGroup,  QOverload<int>::of(&QButtonGroup::buttonClicked),
             this, &TestControl::changeMode);
 
     QVBoxLayout* radioButtons = new QVBoxLayout();
-    radioButtons->addWidget(recordMode);
-    radioButtons->addWidget(playMode);
+    radioButtons->addWidget(recordModeButton);
+    radioButtons->addWidget(playModeButton);
 
     QPushButton* start = new QPushButton("start", this);
     QPushButton* stop = new QPushButton("stop", this);
@@ -43,19 +47,20 @@ TestControl::TestControl(QWidget *parent) : QWidget(parent)
 
 }
 
-void TestControl::changeMode(int)
+void TestControl::changeMode(int button)
 {
+    this->recordMode = button;
+
+    this->recordMode ? qDebug()<< "recordMode" : qDebug()<< "playMode";
 
 }
 
 void TestControl::startClicked()
 {
-    if(recordMode.)
-    {
-        emit
-    }
+    qDebug()<< "push start";
+    this->recordMode ? emit startRecord() : emit startPlay();
 }
 void TestControl::stopClicked()
 {
-
+    this->recordMode ?  emit stopRecord() : emit stopPlay();
 }

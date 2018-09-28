@@ -1,16 +1,20 @@
 #include "mainwidget.h"
 
 #include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QMenuBar>
 #include <QApplication>
+#include <QLineEdit>
 
 MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
 {
     QMenuBar *menuBar = new QMenuBar(this);
+
+
 
     QMenu* pmnu = new QMenu("&Menu", menuBar);
 
@@ -32,11 +36,13 @@ MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
     QLabel* value = new QLabel("0");
     QComboBox* delta = new QComboBox();
     delta->insertItems(0, {"one", "two", "three", "four"});
+    QLineEdit* lineEdit = new QLineEdit;
 
     connect(inc, &QPushButton::clicked, this, [=](){
         int v = value->text().toInt();
         int d = delta->currentIndex() + 1;
         value->setText(QString::number(v + d));
+        qDebug()<<"icrement!";
     });
 
     connect(reset, &QPushButton::clicked,
@@ -52,6 +58,7 @@ MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
     layout->addWidget(value);
     layout->addWidget(delta);
     layout->addLayout(btnRow);
+    layout->addWidget(lineEdit);
 }
 
 

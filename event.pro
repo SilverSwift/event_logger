@@ -1,6 +1,7 @@
 QT += \
     core \
-    widgets
+    widgets \
+    testlib
 
 SOURCES += \
     main.cpp \
@@ -11,7 +12,8 @@ SOURCES += \
     fileserializer.cpp \
     testcontrol.cpp \
     abstractplayer.cpp \
-    eventplayer.cpp
+    eventplayer.cpp \
+    widgetnamer.cpp
 
 HEADERS += \
     mainwidget.h \
@@ -21,4 +23,5 @@ HEADERS += \
     abstractserializer.h \
     fileserializer.h \
     testcontrol.h \
-    eventplayer.h
+    eventplayer.h \
+    widgetnamer.h

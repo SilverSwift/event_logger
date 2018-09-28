@@ -4,10 +4,14 @@
 #include <QEvent>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QJsonValue>
 #include <QList>
+#include <QMouseEvent>
 #include <QStringList>
+#include <QtTest/QtTest>
 #include <QTimer>
 #include <QWidget>
+#include <QMessageBox>
 
 namespace {
     static const char* PropertyName = "id_name";
@@ -16,6 +20,18 @@ namespace {
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent)
 {
+    QWidget* target = this->findByPropertyName("QMenuBar2", "MainWidget1");
+
+    if (target){
+        qDebug()<<"one";
+        QTest::mouseClick(target,
+                          Qt::LeftButton,
+                          Qt::NoModifier,
+                          QPoint(0,0),
+                          10000);
+        qDebug()<<"two";
+    }
+
 }
 
 EventPlayer::~EventPlayer()
@@ -25,18 +41,32 @@ EventPlayer::~EventPlayer()
 
 void EventPlayer::start()
 {
-    if (mPlay)
+    if (mPlay){
         return;
+    }
     mPlay = true;
-    jsonArray = QJsonDocument::fromBinaryData(pSerializer->read()).array();
-    this->handleEventArray();
+    mPos = 0;
+    QByteArray array = pSerializer->read();
+
+    QJsonDocument document = QJsonDocument::fromJson(array);
+
+    if(document.isArray()){
+        jsonArray = document.array();
+        QTime execTime;
+        execTime.start();
+        qDebug()<<"started"<<execTime.elapsed();
+        this->handleEventArray();
+        qDebug()<<"finished"<<execTime.elapsed();
+    }
+
     mPlay = false;
 }
 
 void EventPlayer::stop()
 {
-    if (!mPlay)
+    if (!mPlay){
         return;
+    }
     mPlay = false;
 }
 
@@ -50,9 +80,9 @@ void EventPlayer::handleEventArray()
 
     foreach (const QJsonValue & v, jsonArray){
         if(mPlay){
-            this->inspect();
             QJsonObject eventObject = v.toObject();
-            QTimer::singleShot(eventObject.value("timestamp").toInt() - preTime, this, SLOT(generateEvent(eventObject)));
+            qDebug()<< eventObject.value("objectName").toString();
+            generateEvent(eventObject, eventObject.value("timestamp").toInt() - preTime);
             preTime = eventObject.value("timestamp").toInt();
         }
         else{
@@ -61,31 +91,59 @@ void EventPlayer::handleEventArray()
     }
 }
 
-void EventPlayer::generateEvent(QJsonObject obj)
+void EventPlayer::timerEvent(QTimerEvent*)
 {
+    if (mPos < 0 || mPos >= jsonArray.size())
+        return;
+
+    QJsonObject eventObject = jsonArray.at(mPos).toObject();
+    if (eventObject.isEmpty())
+        return;
+    this->generateEvent(eventObject);
+}
+
+void EventPlayer::generateEvent(QJsonObject obj, int delay)
+{
+
     switch(obj.value("eventType").toInt()){
-    case QEvent::MouseButtonPress:{
-        this->mousePress(this->findByPropertyName(obj.value("objectName").toString(), obj.value("parent").toString()),
-                         obj.value("x").toInt(),
-                         obj.value("y").toInt(),
-                         Qt::MouseButton(obj.value("mouseButton").toInt()));
-        break;
-    }
-    case QEvent::KeyPress:{
-        this->keyPress(this->findByPropertyName(obj.value("objectName").toString(), obj.value("parent").toString()),
-                       obj.value("mouseButton").toInt(),
-                       Qt::KeyboardModifiers(obj.value("mouseButton").toInt()));
-        break;
-    }
-    default: qWarning()<<"unhandled event! error!";
-        break;
+        case QEvent::MouseButtonPress:{
+            QWidget* target = this->findByPropertyName(obj.value("objectName").toString(), obj.value("parent").toString());
+            qDebug()<<"click"<<obj.value("objectName").toString();
+            if (!target){
+                qDebug()<<"i will always check my pointers!";
+                return;
+            }
+
+            QTest::mouseClick(target,
+                              Qt::LeftButton,
+                              Qt::NoModifier,
+                              QPoint(obj.value("x").toInt(),
+                                     obj.value("y").toInt()),
+                              delay);
+
+            break;
+        }
+        case QEvent::KeyPress:{
+            QWidget* target = this->findByPropertyName(obj.value("objectName").toString(), obj.value("parent").toString());
+            if (!target){
+                qDebug()<<"i will always check my pointers!";
+                return;
+            }
+
+            QTest::keyClick(target, Qt::Key(obj.value("text").toInt()), Qt::KeyboardModifiers(obj.value("modifiers").toInt()), delay);
+        }
+            break;
+
+        default: qWarning()<<"unhandled event! error!";
+            break;
     }
 }
 
 QWidget* EventPlayer::findByPropertyName(QString name, QString parents)
 {
     QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
-    QWidget* widget;
+    QWidget* widget = nullptr;
+    qDebug()<<"i will never use uninitialized pointers!";
 
     if(parents.isEmpty() ){
         foreach (QWidget *parentWidget, QApplication::topLevelWidgets()){
@@ -97,7 +155,7 @@ QWidget* EventPlayer::findByPropertyName(QString name, QString parents)
 
         QStringList parentList = parents.split('.');
         parentList.append(name);
-        for(int i = 0; i < parentList.size(); ++i)
+        for(int i = 0; i < parentList.size(); i++)
         {
             if(i==0){
                 foreach (QWidget *parentWidget, QApplication::topLevelWidgets()){
@@ -122,47 +180,3 @@ QWidget* EventPlayer::findByPropertyName(QString name, QString parents)
     return widget;
 }
 
-void EventPlayer::inspect()
-{
-    foreach (QWidget *parentWidget, QApplication::topLevelWidgets())
-        this->nameWidget(parentWidget);
-}
-
-void EventPlayer::nameWidget(QWidget *widget)
-{
-    QString name = widget->property(PropertyName).toString();
-    if(name.isEmpty()){
-        name = widget->metaObject()->className();
-        name += QString::number(mCnt++);
-        widget->setProperty(PropertyName, name);
-    }
-
-    QWidgetList wgts = widget->findChildren<QWidget*>(QString(),
-                                                      Qt::FindDirectChildrenOnly);
-
-    foreach (QWidget* wgt, wgts)
-        this->nameWidget(wgt);
-}
-
-void EventPlayer::mousePress(QWidget* wgt,
-                int x,
-                int y,
-                Qt::MouseButton bt,
-                Qt::MouseButtons bts)
-{
-    if (wgt) {
-        QMouseEvent* pePress = new QMouseEvent(QEvent::MouseButtonPress, QPoint(x, y), bt, bts, Qt::NoModifier);
-        QApplication::postEvent(wgt, pePress);
-    }
-}
-
-void EventPlayer::keyPress(QWidget* wgt, int key, Qt::KeyboardModifiers modifiers)
-{
-    if(wgt) {
-        QKeyEvent keyPress(QEvent::KeyPress, key, modifiers);
-        QApplication::postEvent(wgt, &keyPress);
-
-        QKeyEvent keyRelease(QEvent::KeyPress, key, modifiers);
-        QApplication::postEvent(wgt, &keyRelease);
-    }
-}
