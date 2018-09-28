@@ -3,6 +3,8 @@
 
 #include "abstractplayer.h"
 #include <QJsonArray>
+#include <QTime>
+
 #include <QJsonObject>
 
 class EventPlayer : public AbstractPlayer
@@ -26,6 +28,7 @@ protected:
 private:
     QJsonArray jsonArray;
     int mPos = 0;
+    QTime executiveTime;
 };
 
 #endif // EVENTPLAYER_H

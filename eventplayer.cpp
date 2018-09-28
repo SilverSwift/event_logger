@@ -20,17 +20,6 @@ namespace {
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent)
 {
-    QWidget* target = this->findByPropertyName("QMenuBar2", "MainWidget1");
-
-    if (target){
-        qDebug()<<"one";
-        QTest::mouseClick(target,
-                          Qt::LeftButton,
-                          Qt::NoModifier,
-                          QPoint(0,0),
-                          10000);
-        qDebug()<<"two";
-    }
 
 }
 
@@ -41,25 +30,21 @@ EventPlayer::~EventPlayer()
 
 void EventPlayer::start()
 {
-    if (mPlay){
+    if (mPlay)
         return;
-    }
+
     mPlay = true;
     mPos = 0;
+    executiveTime.restart();
+
     QByteArray array = pSerializer->read();
 
     QJsonDocument document = QJsonDocument::fromJson(array);
 
-    if(document.isArray()){
-        jsonArray = document.array();
-        QTime execTime;
-        execTime.start();
-        qDebug()<<"started"<<execTime.elapsed();
-        this->handleEventArray();
-        qDebug()<<"finished"<<execTime.elapsed();
-    }
+    jsonArray = document.array();
 
-    mPlay = false;
+    this->startTimer(50);
+
 }
 
 void EventPlayer::stop()
@@ -96,6 +81,10 @@ void EventPlayer::timerEvent(QTimerEvent*)
     if (mPos < 0 || mPos >= jsonArray.size())
         return;
 
+    do {
+
+    }
+    while( );
     QJsonObject eventObject = jsonArray.at(mPos).toObject();
     if (eventObject.isEmpty())
         return;
