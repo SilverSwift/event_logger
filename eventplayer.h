@@ -7,6 +7,8 @@
 
 #include <QJsonObject>
 
+class QThread;
+
 class EventPlayer : public AbstractPlayer
 {
     Q_OBJECT
@@ -20,7 +22,16 @@ public slots:
     void start() override;
     void stop() override;
 
+signals:
+    void tryStart(QPrivateSignal);
+    void tryStop(QPrivateSignal);
+    void tryPost(QPrivateSignal);
+
 protected:
+    void print(QWidget* wgt, int indent = 1);
+    void onTryStart();
+    void onTryStop();
+    void onTryPost();
 //    void handleEventArray();
     virtual void timerEvent(QTimerEvent *event) override;
 //    QWidget* findByPropertyName(QString name, QString parents);
@@ -34,6 +45,8 @@ private:
     int mPos = 0;
     int timerId = -1;
     QTime mExecutiveTime;
+
+    QThread* pThread;
 };
 
 #endif // EVENTPLAYER_H

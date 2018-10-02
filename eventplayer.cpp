@@ -10,6 +10,7 @@
 #include <QStringList>
 #include <QtTest/QtTest>
 #include <QTimer>
+#include <QThread>
 #include <QWidget>
 #include <QMessageBox>
 
@@ -19,8 +20,17 @@ namespace {
 
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent)
+  , pThread(new QThread(this))
 {
 
+//    connect(this, &EventPlayer::tryStart, this, [=](){this->onTryStart();});
+//    connect(this, &EventPlayer::tryStart, this, [=](){this->onTryStop();});
+
+    connect(this, &EventPlayer::tryStart, this, &EventPlayer::onTryStart, Qt::QueuedConnection);
+    connect(this, &EventPlayer::tryStop, this, &EventPlayer::onTryStop, Qt::QueuedConnection);
+    connect(this, &EventPlayer::tryPost, this, &EventPlayer::onTryPost, Qt::QueuedConnection);
+    this->moveToThread(pThread);
+    pThread->start();
 }
 
 EventPlayer::~EventPlayer()
@@ -29,6 +39,27 @@ EventPlayer::~EventPlayer()
 }
 
 void EventPlayer::start()
+{
+//    this->onTryStart();
+    emit tryStart(QPrivateSignal());
+
+}
+
+void EventPlayer::stop()
+{
+//    this->onTryStop();
+    emit tryStop(QPrivateSignal());
+}
+
+void EventPlayer::print(QWidget* wgt, int indent)
+{
+    qDebug()<<QString("%1%2").arg('+', indent).arg(wgt->property(PropertyName).toString());
+    auto children = wgt->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    foreach (auto child, children)
+        this->print(child, indent + 1);
+}
+
+void EventPlayer::onTryStart()
 {
     if (mPlay)
         return;
@@ -44,15 +75,43 @@ void EventPlayer::start()
     mJsonArray = document.array();
 
     timerId = this->startTimer(50);
-
 }
 
-void EventPlayer::stop()
+void EventPlayer::onTryStop()
 {
     if (!mPlay){
         return;
     }
     mPlay = false;
+}
+
+void EventPlayer::onTryPost()
+{
+    QJsonObject eventObject;
+
+    while( !(eventObject = this->hasPendingEvents()).isEmpty() )
+    {
+        auto list = QApplication::topLevelWidgets();
+        foreach (auto item, list)
+            this->print(item);
+
+        QObject* reciever = this->findReciever(eventObject);
+        QEvent* event = this->generateEvent(eventObject);
+
+        if (reciever && event){
+//            QTimer::singleShot(10,this, [=](){qApp->sendEvent(reciever, event);});
+            qApp->postEvent(reciever, event);
+            qDebug()<<mExecutiveTime.elapsed()
+                    <<reciever->property(PropertyName).toString()
+                    <<event->type();
+            qApp->processEvents();
+            mPos++;
+        }
+        else break;
+    }
+
+    if (!mPlay)
+        this->killTimer(timerId);
 }
 
 //void EventPlayer::handleEventArray()
@@ -78,26 +137,7 @@ void EventPlayer::stop()
 
 void EventPlayer::timerEvent(QTimerEvent*)
 {
-    QJsonObject eventObject;
-
-    while( !(eventObject = this->hasPendingEvents()).isEmpty() )
-    {
-        QObject* reciever = this->findReciever(eventObject);
-        QEvent* event = this->generateEvent(eventObject);
-
-        if (reciever && event){
-            qApp->postEvent(reciever, event);
-            qDebug()<<mExecutiveTime.elapsed()
-                    <<reciever->property(PropertyName).toString()
-                    <<event->type();
-        }
-
-
-        mPos++;
-    }
-
-    if (!mPlay)
-        this->killTimer(timerId);
+    emit tryPost(QPrivateSignal());
 }
 
 //void EventPlayer::generateEvent(QJsonObject obj, int delay)
@@ -179,6 +219,8 @@ void EventPlayer::timerEvent(QTimerEvent*)
 
 QWidget* EventPlayer::findByParent(QStringList pathList, QWidget* parent)
 {
+    qDebug()<<"looking for"<<pathList.join(".")<<parent;
+
     if (pathList.isEmpty() || !parent)
         return nullptr;
 
@@ -186,8 +228,12 @@ QWidget* EventPlayer::findByParent(QStringList pathList, QWidget* parent)
 
     foreach (auto child, children) {
 
-        if (child->property(PropertyName).toString() != pathList[0])
+        if (child->property(PropertyName).toString() != pathList[0]){
+            qDebug()<<"skipped"<<child->property(PropertyName).toString();
             continue;
+        }
+
+        qDebug()<<"found"<<pathList[0];
 
         pathList.removeAt(0);
 
@@ -209,8 +255,11 @@ QWidget* EventPlayer::findReciever(const QJsonObject object)
 
     QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
 
+    qDebug()<<"looking for"<<pathList.join(".");
     foreach (auto widget, topLevelWidgets) {
-        if (widget->property(PropertyName).toString() != pathList[0]) continue;
+//        if (!widget) continue;
+        if (widget->property(PropertyName).toString() != pathList[0]) {qDebug()<<"skipped"<<widget->property(PropertyName).toString(); continue;}
+        qDebug()<<"found"<<pathList[0];
         pathList.removeAt(0);
         return this->findByParent(pathList, widget);
     }
@@ -226,7 +275,8 @@ QEvent*EventPlayer::generateEvent(QJsonObject object)
     switch(object.value("eventType").toInt()){
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
-        case QEvent::MouseButtonRelease:{
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseMove:{
             QPointF point(object.value("x").toInt(), object.value("y").toInt());
             Qt::MouseButton button = Qt::MouseButton(object.value("mouseButton").toInt());
             Qt::MouseButtons buttons = Qt::MouseButtons(object.value("mouseButtons").toInt());

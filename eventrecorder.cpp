@@ -51,6 +51,7 @@ QString EventRecorder::findParentObject(QObject *obj)
     QString head = this->findParentObject(obj->parent());
     if (!head.isEmpty())
         head += ".";
+
     head += obj->parent()->property(PropertyName).toString();
 
     return head;
@@ -66,9 +67,8 @@ QJsonObject EventRecorder::logEntry(QObject *watched, QEvent *event)
     eventObject.insert("timestamp", QJsonValue::fromVariant(mRuntime.elapsed()));
 
     eventObject.insert("parent", this->findParentObject(watched));
-    qDebug()<<watched->property(PropertyName).toString();
-    if (watched->parent())
-        qDebug()<<watched->parent()->property(PropertyName).toString();
+    qDebug()<<this->findParentObject(watched) + "." +
+              watched->property(PropertyName).toString();
 
     return eventObject;
 }
@@ -80,7 +80,8 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
     switch (event->type()) {
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
-        case QEvent::MouseButtonRelease:{
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseMove:{
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
             eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
             eventObject.insert("mouseButtons", QJsonValue::fromVariant(QVariant::fromValue(mouseEvent->buttons())));
@@ -100,7 +101,6 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
         }
 
         default:
-            qWarning()<<"unhandled event! error!";
             return;
     }
 
@@ -124,7 +124,7 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
         }
 
         default:
-            qWarning()<<"unhandled event! error!";
+
             break;
     }
 

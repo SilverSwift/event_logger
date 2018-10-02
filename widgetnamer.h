@@ -13,7 +13,7 @@ public:
 
 protected:
     void inspect();
-    void nameWidget(QWidget* widget);
+    void nameWidget(QWidget* widget, int tab = 1);
 
 private:
     int mCnt = 0;
