@@ -78,14 +78,17 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
     QJsonObject eventObject = this->logEntry(watched, event);
 
     switch (event->type()) {
-        case QEvent::MouseButtonPress: {
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:{
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
             eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
             eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
             eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
             break;
         }
-        case QEvent::KeyPress: {
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease: {
             QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
             eventObject.insert("text", QJsonValue::fromVariant(keyEvent->key()));
             QVariant modifier(qApp->keyboardModifiers());

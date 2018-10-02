@@ -14,21 +14,26 @@ public:
     explicit EventPlayer(AbstractSerializer* serializer,
                            QObject *parent = nullptr);
     virtual ~EventPlayer() override;
-    void generateEvent(QJsonObject obj, int delay = -1);
+//    void generateEvent(QJsonObject obj, int delay);
 
 public slots:
     void start() override;
     void stop() override;
 
 protected:
-    void handleEventArray();
+//    void handleEventArray();
     virtual void timerEvent(QTimerEvent *event) override;
-    QWidget* findByPropertyName(QString name, QString parents);
+//    QWidget* findByPropertyName(QString name, QString parents);
+    QWidget* findByParent(QStringList pathList, QWidget* parent);
+    QWidget* findReciever(const QJsonObject object);
+    QEvent* generateEvent(QJsonObject object);
+    QJsonObject hasPendingEvents();
 
 private:
-    QJsonArray jsonArray;
+    QJsonArray mJsonArray;
     int mPos = 0;
-    QTime executiveTime;
+    int timerId = -1;
+    QTime mExecutiveTime;
 };
 
 #endif // EVENTPLAYER_H
