@@ -43,7 +43,7 @@ void EventPlayer::start()
 
     mJsonArray = document.array();
 
-    timerId = this->startTimer(40);
+    timerId = this->startTimer(50);
 
 }
 
@@ -85,8 +85,13 @@ void EventPlayer::timerEvent(QTimerEvent*)
         QObject* reciever = this->findReciever(eventObject);
         QEvent* event = this->generateEvent(eventObject);
 
-        if (reciever && event)
+        if (reciever && event){
             qApp->postEvent(reciever, event);
+            qDebug()<<mExecutiveTime.elapsed()
+                    <<reciever->property(PropertyName).toString()
+                    <<event->type();
+        }
+
 
         mPos++;
     }
@@ -204,17 +209,13 @@ QWidget* EventPlayer::findReciever(const QJsonObject object)
 
     QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
 
-    //problem here
+    foreach (auto widget, topLevelWidgets) {
+        if (widget->property(PropertyName).toString() != pathList[0]) continue;
+        pathList.removeAt(0);
+        return this->findByParent(pathList, widget);
+    }
 
-    QWidget *crutchParent = new QWidget();
-    foreach (auto widget, topLevelWidgets)
-        widget->setParent(crutchParent);
-
-    QWidget* widget = this->findByParent(pathList, crutchParent);
-
-    crutchParent->deleteLater();
-
-    return widget;
+    return nullptr;
 }
 
 QEvent*EventPlayer::generateEvent(QJsonObject object)
@@ -228,7 +229,9 @@ QEvent*EventPlayer::generateEvent(QJsonObject object)
         case QEvent::MouseButtonRelease:{
             QPointF point(object.value("x").toInt(), object.value("y").toInt());
             Qt::MouseButton button = Qt::MouseButton(object.value("mouseButton").toInt());
-            event = new QMouseEvent(type, point, button, button, Qt::NoModifier);
+            Qt::MouseButtons buttons = Qt::MouseButtons(object.value("mouseButtons").toInt());
+            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value("modifiers").toInt());
+            event = new QMouseEvent(type, point, button, buttons, modifiers);
             break;
         }
         case QEvent::KeyPress:

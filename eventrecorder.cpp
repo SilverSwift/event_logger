@@ -83,6 +83,9 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
         case QEvent::MouseButtonRelease:{
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
             eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
+            eventObject.insert("mouseButtons", QJsonValue::fromVariant(QVariant::fromValue(mouseEvent->buttons())));
+            QVariant modifier(qApp->keyboardModifiers());
+            eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
             eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
             eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
             break;
@@ -109,22 +112,21 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
     if(watched->inherits("QWidgetWindow"))
         return QObject::eventFilter(watched, event);
 
-    if(     (event->type() != QEvent::MouseButtonPress) &&
-            (event->type() != QEvent::KeyPress) )
-        return false;
-
     switch (event->type()) {
         case QEvent::KeyPress:
-        case QEvent::MouseButtonPress: {
-        qDebug()<<"Mouse click!";
-        this->logInputEvent(watched, event);
-        }
+        case QEvent::KeyRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease: {
+            qDebug()<<"Mouse click!";
+            this->logInputEvent(watched, event);
             break;
+        }
 
         default:
             qWarning()<<"unhandled event! error!";
             break;
     }
 
-return false;
+    return false;
 }
