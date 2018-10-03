@@ -1,4 +1,5 @@
 #include "eventrecorder.h"
+#include "eventconstants.h"
 #include "fileserializer.h"
 
 #include <QApplication>
@@ -11,10 +12,6 @@
 #include <QMouseEvent>
 #include <QWidget>
 
-
-namespace {
-    static const char* PropertyName = "id_name";
-}
 
 EventRecorder::EventRecorder(AbstractSerializer* serializer, QObject *parent) :
     AbstractRecorder(serializer, parent)
@@ -54,7 +51,7 @@ QString EventRecorder::findParentObject(QObject *obj)
     if (!head.isEmpty())
         head += ".";
 
-    head += obj->parent()->property(PropertyName).toString();
+    head += obj->parent()->property(widgetId).toString();
 
     return head;
 }
@@ -63,14 +60,12 @@ QJsonObject EventRecorder::logEntry(QObject *watched, QEvent *event)
 {
     QJsonObject eventObject;
 
-    eventObject.insert("className", QJsonValue::fromVariant(watched->metaObject()->className()));
-    eventObject.insert("objectName", QJsonValue::fromVariant(watched->property(PropertyName).toString()));
-    eventObject.insert("eventType", QJsonValue::fromVariant(event->type()));
-    eventObject.insert("timestamp", QJsonValue::fromVariant(mRuntime.elapsed()));
+    eventObject.insert(className, QJsonValue::fromVariant(watched->metaObject()->className()));
+    eventObject.insert(widgetName, QJsonValue::fromVariant(watched->property(widgetId).toString()));
+    eventObject.insert(eventType, QJsonValue::fromVariant(event->type()));
+    eventObject.insert(timestamp, QJsonValue::fromVariant(mRuntime.elapsed()));
 
-    eventObject.insert("parent", this->findParentObject(watched));
-//    qDebug()<<this->findParentObject(watched) + "." +
-//              watched->property(PropertyName).toString();
+    eventObject.insert(parents, this->findParentObject(watched));
 
     return eventObject;
 }
@@ -85,20 +80,20 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
         case QEvent::MouseButtonRelease:
         case QEvent::MouseMove:{
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-            eventObject.insert("mouseButton", QJsonValue::fromVariant(mouseEvent->button()));
-            eventObject.insert("mouseButtons", QJsonValue::fromVariant(QVariant::fromValue(mouseEvent->buttons())));
+            eventObject.insert(mouseButton, QJsonValue::fromVariant(mouseEvent->button()));
+            eventObject.insert(mouseButtons, QJsonValue::fromVariant(QVariant::fromValue(mouseEvent->buttons())));
             QVariant modifier(qApp->keyboardModifiers());
-            eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
-            eventObject.insert("x", QJsonValue::fromVariant(mouseEvent->x()));
-            eventObject.insert("y", QJsonValue::fromVariant(mouseEvent->y()));
+            eventObject.insert(modifiers, QJsonValue::fromVariant(modifier));
+            eventObject.insert(::x, QJsonValue::fromVariant(mouseEvent->x()));
+            eventObject.insert(y, QJsonValue::fromVariant(mouseEvent->y()));
             break;
         }
         case QEvent::KeyPress:
         case QEvent::KeyRelease: {
             QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-            eventObject.insert("text", QJsonValue::fromVariant(keyEvent->key()));
+            eventObject.insert(text, QJsonValue::fromVariant(keyEvent->key()));
             QVariant modifier(qApp->keyboardModifiers());
-            eventObject.insert("modifiers", QJsonValue::fromVariant(modifier));
+            eventObject.insert(modifiers, QJsonValue::fromVariant(modifier));
             break;
         }
 

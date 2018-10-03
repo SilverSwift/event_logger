@@ -1,12 +1,9 @@
 #include "widgetnamer.h"
+#include "eventconstants.h"
 #include <QApplication>
 #include <QDebug>
 #include <QChildEvent>
 #include <QWidget>
-
-namespace {
-    static const char* PropertyName = "id_name";
-}
 
 WidgetNamer::WidgetNamer(QObject *parent) : QObject(parent)
 {
@@ -24,7 +21,7 @@ bool WidgetNamer::eventFilter(QObject* watched, QEvent* event)
         QString name = QString("%1%2")
                            .arg(child->metaObject()->className())
                            .arg(mCnt++);
-        child->setProperty(PropertyName, name);
+        child->setProperty(widgetId, name);
     }
 
     return false;
@@ -39,11 +36,11 @@ void WidgetNamer::inspect()
 
 void WidgetNamer::nameWidget(QWidget *widget)
 {
-    QString name = widget->property(PropertyName).toString();
+    QString name = widget->property(widgetId).toString();
     if(name.isEmpty()){
         name = widget->metaObject()->className();
         name += QString::number(mCnt++);
-        widget->setProperty(PropertyName, name);
+        widget->setProperty(widgetId, name);
     }
 
     QWidgetList wgts = widget->findChildren<QWidget*>(QString(),

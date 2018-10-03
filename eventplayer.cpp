@@ -1,5 +1,6 @@
 #include "eventplayer.h"
 #include "fileserializer.h"
+#include "eventconstants.h"
 
 #include <QApplication>
 #include <QEvent>
@@ -10,11 +11,6 @@
 #include <QStringList>
 #include <QTimer>
 #include <QWidget>
-
-
-namespace {
-    static const char* PropertyName = "id_name";
-}
 
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent) 
@@ -88,10 +84,10 @@ QWidget* EventPlayer::findReciever(const QJsonObject& object)
     foreach (auto widget, topLevelWidgets)
         widgets += widget->findChildren<QWidget*>();
 
-    QString name = object.value("objectName").toString();
+    QString name = object.value(widgetName).toString();
 
     foreach (auto widget, widgets) {
-        if (widget->property(PropertyName).toString() == name)
+        if (widget->property(widgetId).toString() == name)
             return widget;
     }
 
@@ -101,24 +97,24 @@ QWidget* EventPlayer::findReciever(const QJsonObject& object)
 QEvent*EventPlayer::generateEvent(QJsonObject& object)
 {
     QEvent* event = nullptr;
-    QEvent::Type type = QEvent::Type(object.value("eventType").toInt(0));
+    QEvent::Type type = QEvent::Type(object.value(eventType).toInt(0));
 
-    switch(object.value("eventType").toInt()){
+    switch(object.value(eventType).toInt()){
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
         case QEvent::MouseMove:{
-            QPointF point(object.value("x").toInt(), object.value("y").toInt());
-            Qt::MouseButton button = Qt::MouseButton(object.value("mouseButton").toInt());
-            Qt::MouseButtons buttons = Qt::MouseButtons(object.value("mouseButtons").toInt());
-            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value("modifiers").toInt());
+            QPointF point(object.value("x").toInt(), object.value(y).toInt());
+            Qt::MouseButton button = Qt::MouseButton(object.value(mouseButton).toInt());
+            Qt::MouseButtons buttons = Qt::MouseButtons(object.value(mouseButtons).toInt());
+            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
             event = new QMouseEvent(type, point, button, buttons, modifiers);
             break;
         }
         case QEvent::KeyPress:
         case QEvent::KeyRelease:{
-            Qt::Key key = Qt::Key(object.value("text").toInt());
-            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value("modifiers").toInt());
+            Qt::Key key = Qt::Key(object.value(text).toInt());
+            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
             event = new QKeyEvent(type, key, modifiers);
             break;
         }
@@ -138,7 +134,7 @@ QJsonObject EventPlayer::hasPendingEvents()
     }
 
     QJsonObject jsonObject = mJsonArray.at(mCnt).toObject();
-    int timeStamp = jsonObject.value("timestamp").toInt();
+    int timeStamp = jsonObject.value(timestamp).toInt();
     if (mExecutiveTime.elapsed() >= timeStamp)
         return jsonObject;
 

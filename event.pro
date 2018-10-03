@@ -24,4 +24,5 @@ HEADERS += \
     fileserializer.h \
     testcontrol.h \
     eventplayer.h \
-    widgetnamer.h
+    widgetnamer.h \
+    eventconstants.h
