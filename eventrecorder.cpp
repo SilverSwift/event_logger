@@ -1,5 +1,6 @@
 #include "eventrecorder.h"
 #include "fileserializer.h"
+
 #include <QApplication>
 #include <QEvent>
 #include <QDebug>
@@ -9,7 +10,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QWidget>
-#include <QMessageBox>
+
 
 namespace {
     static const char* PropertyName = "id_name";
