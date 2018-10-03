@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     wgt.show();
     wgt.setObjectName("MainWindowTest");
 
-    WidgetNamer::startWidgetNamer();
+    WidgetNamer namer;
 
     EventRecorder recorder(new FileSerializer("output"));
     EventPlayer player(new FileSerializer("output"));

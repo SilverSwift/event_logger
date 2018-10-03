@@ -18,6 +18,7 @@ namespace {
 EventRecorder::EventRecorder(AbstractSerializer* serializer, QObject *parent) :
     AbstractRecorder(serializer, parent)
 {
+
 }
 
 EventRecorder::~EventRecorder()
@@ -67,8 +68,8 @@ QJsonObject EventRecorder::logEntry(QObject *watched, QEvent *event)
     eventObject.insert("timestamp", QJsonValue::fromVariant(mRuntime.elapsed()));
 
     eventObject.insert("parent", this->findParentObject(watched));
-    qDebug()<<this->findParentObject(watched) + "." +
-              watched->property(PropertyName).toString();
+//    qDebug()<<this->findParentObject(watched) + "." +
+//              watched->property(PropertyName).toString();
 
     return eventObject;
 }
@@ -117,14 +118,10 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
         case QEvent::KeyRelease:
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
-        case QEvent::MouseButtonRelease: {
-            qDebug()<<"Mouse click!";
+        case QEvent::MouseButtonRelease:
             this->logInputEvent(watched, event);
             break;
-        }
-
         default:
-
             break;
     }
 

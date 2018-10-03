@@ -53,7 +53,7 @@ void EventPlayer::stop()
 
 void EventPlayer::print(QWidget* wgt, int indent)
 {
-    qDebug()<<QString("%1%2").arg('+', indent).arg(wgt->property(PropertyName).toString());
+//    qDebug()<<QString("%1%2").arg('+', indent).arg(wgt->property(PropertyName).toString());
     auto children = wgt->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     foreach (auto child, children)
         this->print(child, indent + 1);
@@ -101,9 +101,9 @@ void EventPlayer::onTryPost()
         if (reciever && event){
 //            QTimer::singleShot(10,this, [=](){qApp->sendEvent(reciever, event);});
             qApp->postEvent(reciever, event);
-            qDebug()<<mExecutiveTime.elapsed()
-                    <<reciever->property(PropertyName).toString()
-                    <<event->type();
+//            qDebug()<<mExecutiveTime.elapsed()
+//                    <<reciever->property(PropertyName).toString()
+//                    <<event->type();
             qApp->processEvents();
             mPos++;
         }
@@ -219,7 +219,7 @@ void EventPlayer::timerEvent(QTimerEvent*)
 
 QWidget* EventPlayer::findByParent(QStringList pathList, QWidget* parent)
 {
-    qDebug()<<"looking for"<<pathList.join(".")<<parent;
+//    qDebug()<<"looking for"<<pathList.join(".")<<parent;
 
     if (pathList.isEmpty() || !parent)
         return nullptr;
@@ -229,11 +229,11 @@ QWidget* EventPlayer::findByParent(QStringList pathList, QWidget* parent)
     foreach (auto child, children) {
 
         if (child->property(PropertyName).toString() != pathList[0]){
-            qDebug()<<"skipped"<<child->property(PropertyName).toString();
+//            qDebug()<<"skipped"<<child->property(PropertyName).toString();
             continue;
         }
 
-        qDebug()<<"found"<<pathList[0];
+//        qDebug()<<"found"<<pathList[0];
 
         pathList.removeAt(0);
 
@@ -253,17 +253,33 @@ QWidget* EventPlayer::findReciever(const QJsonObject object)
     pathList.append( object.value("parent").toString().split(".") );
     pathList.append( object.value("objectName").toString() );
 
+    QString name = object.value("objectName").toString();
+
     QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
 
-    qDebug()<<"looking for"<<pathList.join(".");
+
+    QWidgetList widgets;
+    foreach (auto widget, topLevelWidgets)
+        widgets += widget->findChildren<QWidget*>();
+
+    foreach (auto widget, widgets) {
+        if (widget->property(PropertyName).toString() == name)
+            return widget;
+    }
+
+
+/*
+//    qDebug()<<"looking for"<<pathList.join(".");
     foreach (auto widget, topLevelWidgets) {
 //        if (!widget) continue;
-        if (widget->property(PropertyName).toString() != pathList[0]) {qDebug()<<"skipped"<<widget->property(PropertyName).toString(); continue;}
-        qDebug()<<"found"<<pathList[0];
+        if (widget->property(PropertyName).toString() != pathList[0]) {
+//            qDebug()<<"skipped"<<widget->property(PropertyName).toString();
+            continue;}
+//        qDebug()<<"found"<<pathList[0];
         pathList.removeAt(0);
         return this->findByParent(pathList, widget);
     }
-
+*/
     return nullptr;
 }
 
@@ -293,7 +309,7 @@ QEvent*EventPlayer::generateEvent(QJsonObject object)
         }
 
         default:
-            qWarning()<<"unhandled event! error!";
+//            qWarning()<<"unhandled event! error!";
             break;
     }
     return event;
