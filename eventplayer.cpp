@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QWidget>
 
+#include <QDebug>
+
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent) 
 {
@@ -40,7 +42,7 @@ void EventPlayer::onTryStart()
 
     mJsonArray = document.array();
 
-    mTimerId = this->startTimer(50);
+    mTimerId = this->startTimer(10);
 }
 
 void EventPlayer::onTryStop()
@@ -55,7 +57,6 @@ void EventPlayer::onTryPost()
 {
 
     QJsonObject eventObject;
-
     while( !(eventObject = this->hasPendingEvents()).isEmpty() )
     {
         QObject* reciever = this->findReciever(eventObject);
@@ -64,8 +65,11 @@ void EventPlayer::onTryPost()
         if (reciever && event){
             qApp->postEvent(reciever, event);
             mCnt++;
+        }else{
+            this->onTryStop();
+            break;
+
         }
-        else break;
     }
     if (!mPlay)
         this->killTimer(mTimerId);
@@ -80,15 +84,23 @@ void EventPlayer::timerEvent(QTimerEvent*)
 QWidget* EventPlayer::findReciever(const QJsonObject& object)
 {
     QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
-    QWidgetList widgets;
-    foreach (auto widget, topLevelWidgets)
-        widgets += widget->findChildren<QWidget*>();
 
     QString name = object.value(widgetName).toString();
 
-    foreach (auto widget, widgets) {
-        if (widget->property(widgetId).toString() == name)
-            return widget;
+    if(object.value(parents).toString().isEmpty()){
+        foreach (auto widget, topLevelWidgets) {
+            if (widget->property(widgetId).toString() == name)
+                return widget;
+        }
+    } else {
+        QWidgetList widgets;
+        foreach (auto widget, topLevelWidgets)
+            widgets += widget->findChildren<QWidget*>();
+
+        foreach (auto widget, widgets) {
+            if (widget->property(widgetId).toString() == name)
+                return widget;
+        }
     }
 
     return nullptr;
@@ -113,6 +125,7 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
         }
         case QEvent::KeyPress:
         case QEvent::KeyRelease:{
+
             Qt::Key key = Qt::Key(object.value(text).toInt());
             Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
             event = new QKeyEvent(type, key, modifiers);
@@ -135,8 +148,10 @@ QJsonObject EventPlayer::hasPendingEvents()
 
     QJsonObject jsonObject = mJsonArray.at(mCnt).toObject();
     int timeStamp = jsonObject.value(timestamp).toInt();
-    if (mExecutiveTime.elapsed() >= timeStamp)
+
+    if (mExecutiveTime.elapsed() >= timeStamp){
         return jsonObject;
+    }
 
     return QJsonObject();
 }

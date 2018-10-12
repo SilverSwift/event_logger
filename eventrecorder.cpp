@@ -5,11 +5,13 @@
 #include <QApplication>
 #include <QEvent>
 #include <QDebug>
+#include <QFocusEvent>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QProcess>
 #include <QWidget>
 
 
@@ -29,8 +31,13 @@ void EventRecorder::start()
     if (mRecording)
         return;
     mRecording = true;
+
     mRuntime.restart();
     qApp->installEventFilter(this);
+
+    QProcess *process = new QProcess();
+    process->start();
+
 }
 
 void EventRecorder::stop()
@@ -94,6 +101,10 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             eventObject.insert(text, QJsonValue::fromVariant(keyEvent->key()));
             QVariant modifier(qApp->keyboardModifiers());
             eventObject.insert(modifiers, QJsonValue::fromVariant(modifier));
+            break;
+        }
+        case QEvent::FocusIn:
+        case QEvent::FocusOut: {
             break;
         }
 

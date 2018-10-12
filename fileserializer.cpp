@@ -31,7 +31,6 @@ bool FileSerializer::write(QByteArray data)
 QByteArray FileSerializer::read()
 {
     QFile file (mFileName);
-    //if (!file.open(QFile::ReadOnly)){
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
         qDebug()<< file.errorString();
         return QByteArray();

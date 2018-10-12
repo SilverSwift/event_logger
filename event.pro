@@ -13,7 +13,7 @@ SOURCES += \
     testcontrol.cpp \
     abstractplayer.cpp \
     eventplayer.cpp \
-    widgetnamer.cpp
+    widgetidcontroller.cpp
 
 HEADERS += \
     mainwidget.h \
@@ -24,5 +24,5 @@ HEADERS += \
     fileserializer.h \
     testcontrol.h \
     eventplayer.h \
-    widgetnamer.h \
-    eventconstants.h
+    eventconstants.h \
+    widgetidcontroller.h

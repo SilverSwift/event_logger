@@ -2,20 +2,20 @@
 #define EVENTCONSTANTS_H
 
 
-static const char* widgetId = "widgetId";
+const char widgetId[] = "widgetId";
 
-static const char* className = "className";
-static const char* widgetName = "widgetName";
-static const char* eventType = "eventType";
-static const char* timestamp = "timestamp";
-static const char* parents = "parents";
+const char className[] = "className";
+const char widgetName[] = "widgetName";
+const char eventType[] = "eventType";
+const char timestamp[] = "timestamp";
+const char parents[] = "parents";
 
-static const char* mouseButton = "mouseButton";
-static const char* mouseButtons = "mouseButtons";
-static const char* modifiers = "modifiers";
-static const char* x = "x";
-static const char* y = "y";
-static const char* text = "text";
+const char mouseButton[] = "mouseButton";
+const char mouseButtons[] = "mouseButtons";
+const char modifiers[] = "modifiers";
+const char x[] = "x";
+const char y[] = "y";
+const char text[] = "text";
 
 
 #endif // EVENTCONSTANTS_H
