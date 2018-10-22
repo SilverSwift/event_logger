@@ -4,12 +4,15 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QFocusEvent>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QMouseEvent>
+#include <QSize>
 #include <QStringList>
 #include <QTimer>
+#include <QWindowStateChangeEvent>
 #include <QWidget>
 
 #include <QDebug>
@@ -64,8 +67,10 @@ void EventPlayer::onTryPost()
 
         if (reciever && event){
             qApp->postEvent(reciever, event);
+            qDebug() << reciever->property("widgetId") << event->type();
             mCnt++;
         }else{
+            qDebug() << "Reciever or event not found!";
             this->onTryStop();
             break;
 
@@ -112,10 +117,67 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
     QEvent::Type type = QEvent::Type(object.value(eventType).toInt(0));
 
     switch(object.value(eventType).toInt()){
+        case QEvent::ActivationChange: {
+            event = new QEvent(type);
+            break;
+        }
+
+        case QEvent::Enter:{
+
+            QPointF localPoint(object.value(::x).toInt(), object.value(y).toInt());
+            QPointF windowPoint(object.value(windowX).toInt(), object.value(windowY).toInt());
+            QPointF screenPoint(object.value(screenX).toInt(), object.value(screenY).toInt());
+            event = new QEnterEvent(localPoint, windowPoint, screenPoint);
+            break;
+        }
+
+        case QEvent::FocusIn:
+        case QEvent::FocusOut:
+        case QEvent::FocusAboutToChange: {
+            event = new QFocusEvent(type, Qt::FocusReason::MouseFocusReason);
+            break;
+        }
+
+        case QEvent::HoverEnter:
+        case QEvent::HoverLeave:
+        case QEvent::HoverMove: {
+            QPointF point(object.value(::x).toInt(), object.value(y).toInt());
+            QPointF oldPoint(object.value(oldX).toInt(), object.value(oldY).toInt());
+            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
+            event = new QHoverEvent(type, point, oldPoint, modifiers);
+            break;
+        }
+
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease:{
+            Qt::Key key = Qt::Key(object.value(::key).toInt());
+            QString keyText = object.value(text).toString();
+            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
+            event = new QKeyEvent(type, key, modifiers, keyText);
+            break;
+        }
+
+        case QEvent::LayoutRequest:
+        case QEvent::Leave: {
+            event = new QEvent(type);
+            break;
+        }
+
+        case QEvent::Move: {
+            QPoint point(object.value(::x).toInt(), object.value(y).toInt());
+            QPoint oldPoint(object.value(oldX).toInt(), object.value(oldY).toInt());
+
+            event = new QMoveEvent(point, oldPoint);
+            break;
+        }
+
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
-        case QEvent::MouseMove:{
+        case QEvent::MouseMove:
+        case QEvent::NonClientAreaMouseMove:
+        case QEvent::NonClientAreaMouseButtonPress:
+        case QEvent::NonClientAreaMouseButtonRelease:{
             QPointF point(object.value("x").toInt(), object.value(y).toInt());
             Qt::MouseButton button = Qt::MouseButton(object.value(mouseButton).toInt());
             Qt::MouseButtons buttons = Qt::MouseButtons(object.value(mouseButtons).toInt());
@@ -123,18 +185,27 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
             event = new QMouseEvent(type, point, button, buttons, modifiers);
             break;
         }
-        case QEvent::KeyPress:
-        case QEvent::KeyRelease:{
 
-            Qt::Key key = Qt::Key(object.value(text).toInt());
-            Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(object.value(::modifiers).toInt());
-            event = new QKeyEvent(type, key, modifiers);
+        case QEvent::Resize: {
+            QSize size(object.value(::x).toInt(), object.value(y).toInt());
+            QSize oldSize(object.value(oldX).toInt(), object.value(oldY).toInt());
+            event = new QResizeEvent(size, oldSize);
             break;
         }
 
-        default:
-
+        case QEvent::StyleAnimationUpdate:
+        case QEvent::UpdateRequest:
+        case QEvent::WindowActivate:
+        case QEvent::WindowDeactivate:
+        {
+            event = new QEvent(type);
             break;
+        }
+
+        default: {
+            qDebug() << "error"<<object.value(timestamp) << object.value(eventType) << object.value(eventType).toInt();
+            break;
+        }
     }
     return event;
 }
@@ -150,6 +221,7 @@ QJsonObject EventPlayer::hasPendingEvents()
     int timeStamp = jsonObject.value(timestamp).toInt();
 
     if (mExecutiveTime.elapsed() >= timeStamp){
+        qDebug() << mExecutiveTime.elapsed() << mCnt;
         return jsonObject;
     }
 

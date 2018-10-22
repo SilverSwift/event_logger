@@ -18,8 +18,6 @@ int main(int argc, char** argv)
     wgt.show();
     wgt.setObjectName("MainWindowTest");
 
-    //WidgetIdController controller;
-
     EventRecorder recorder(new FileSerializer("output"));
     EventPlayer player(new FileSerializer("output"));
 
