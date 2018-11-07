@@ -1,7 +1,8 @@
 QT += \
     core \
     widgets \
-    testlib
+
+CONFIG += console
 
 SOURCES += \
     main.cpp \
@@ -13,7 +14,8 @@ SOURCES += \
     testcontrol.cpp \
     abstractplayer.cpp \
     eventplayer.cpp \
-    widgetidcontroller.cpp
+    widgetidcontroller.cpp \
+    modemanager.cpp
 
 HEADERS += \
     mainwidget.h \
@@ -25,4 +27,5 @@ HEADERS += \
     testcontrol.h \
     eventplayer.h \
     eventconstants.h \
-    widgetidcontroller.h
+    widgetidcontroller.h \
+    modemanager.h

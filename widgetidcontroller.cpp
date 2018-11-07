@@ -1,10 +1,10 @@
 #include "widgetidcontroller.h"
 #include "eventconstants.h"
+
 #include <QApplication>
-#include <QDebug>
 #include <QChildEvent>
-#include <QWidget>
 #include <QListWidget>
+#include <QWidget>
 
 WidgetIdController::WidgetIdController(QObject *parent) : QObject(parent)
 {
@@ -22,7 +22,6 @@ bool WidgetIdController::eventFilter(QObject* watched, QEvent* event)
     if(watched->inherits("QWidgetWindow"))
         return QObject::eventFilter(watched, event);
 
-    //if((event->type() == QEvent::ChildAdded)){
         if((event->type() == QEvent::ChildPolished)){
         auto child = static_cast<QChildEvent*>(event)->child();
         if(child->property(widgetId).toString().isEmpty() ){
@@ -52,7 +51,6 @@ void WidgetIdController::nameWidget(QWidget *widget)
         name = widget->metaObject()->className();
         name += QString::number(mCnt++);
         widget->setProperty(widgetId, name);
-        qDebug() << name;
     }
 
 

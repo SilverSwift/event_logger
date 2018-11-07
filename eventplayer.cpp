@@ -3,6 +3,8 @@
 #include "eventconstants.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QCloseEvent>
 #include <QEvent>
 #include <QFocusEvent>
 #include <QJsonDocument>
@@ -10,12 +12,9 @@
 #include <QJsonValue>
 #include <QMouseEvent>
 #include <QSize>
-#include <QStringList>
 #include <QTimer>
-#include <QWindowStateChangeEvent>
 #include <QWidget>
 
-#include <QDebug>
 
 EventPlayer::EventPlayer(AbstractSerializer* serializer, QObject *parent) :
     AbstractPlayer(serializer, parent) 
@@ -54,6 +53,9 @@ void EventPlayer::onTryStop()
         return;
 
     mPlay = false;
+
+    this->killTimer(mTimerId);
+    qDebug()<< "Play mode was finished!";
 }
 
 void EventPlayer::onTryPost()
@@ -62,22 +64,20 @@ void EventPlayer::onTryPost()
     QJsonObject eventObject;
     while( !(eventObject = this->hasPendingEvents()).isEmpty() )
     {
+
         QObject* reciever = this->findReciever(eventObject);
         QEvent* event = this->generateEvent(eventObject);
 
         if (reciever && event){
             qApp->postEvent(reciever, event);
-            qDebug() << reciever->property("widgetId") << event->type();
             mCnt++;
         }else{
-            qDebug() << "Reciever or event not found!";
             this->onTryStop();
             break;
 
         }
     }
-    if (!mPlay)
-        this->killTimer(mTimerId);
+
 }
 
 
@@ -122,6 +122,11 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
             break;
         }
 
+        case QEvent::Close:  {
+        event = new QCloseEvent();
+        break;
+        }
+
         case QEvent::Enter:{
 
             QPointF localPoint(object.value(::x).toInt(), object.value(y).toInt());
@@ -157,27 +162,26 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
             break;
         }
 
-        case QEvent::LayoutRequest:
         case QEvent::Leave: {
             event = new QEvent(type);
             break;
         }
 
-        case QEvent::Move: {
+        /*case QEvent::Move: {
             QPoint point(object.value(::x).toInt(), object.value(y).toInt());
             QPoint oldPoint(object.value(oldX).toInt(), object.value(oldY).toInt());
 
             event = new QMoveEvent(point, oldPoint);
             break;
-        }
+        }*/
 
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
         case QEvent::MouseMove:
-        case QEvent::NonClientAreaMouseMove:
+        /*case QEvent::NonClientAreaMouseMove:
         case QEvent::NonClientAreaMouseButtonPress:
-        case QEvent::NonClientAreaMouseButtonRelease:{
+        case QEvent::NonClientAreaMouseButtonRelease:*/{
             QPointF point(object.value("x").toInt(), object.value(y).toInt());
             Qt::MouseButton button = Qt::MouseButton(object.value(mouseButton).toInt());
             Qt::MouseButtons buttons = Qt::MouseButtons(object.value(mouseButtons).toInt());
@@ -186,14 +190,13 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
             break;
         }
 
-        case QEvent::Resize: {
+        /*case QEvent::Resize: {
             QSize size(object.value(::x).toInt(), object.value(y).toInt());
             QSize oldSize(object.value(oldX).toInt(), object.value(oldY).toInt());
             event = new QResizeEvent(size, oldSize);
             break;
-        }
+        }*/
 
-        case QEvent::StyleAnimationUpdate:
         case QEvent::UpdateRequest:
         case QEvent::WindowActivate:
         case QEvent::WindowDeactivate:
@@ -203,7 +206,6 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
         }
 
         default: {
-            qDebug() << "error"<<object.value(timestamp) << object.value(eventType) << object.value(eventType).toInt();
             break;
         }
     }
@@ -213,7 +215,7 @@ QEvent*EventPlayer::generateEvent(QJsonObject& object)
 QJsonObject EventPlayer::hasPendingEvents()
 {
     if (mCnt < 0 || mCnt >= mJsonArray.size()){
-        mPlay = false;
+        this->stop();
         return QJsonObject();
     }
 
@@ -221,7 +223,6 @@ QJsonObject EventPlayer::hasPendingEvents()
     int timeStamp = jsonObject.value(timestamp).toInt();
 
     if (mExecutiveTime.elapsed() >= timeStamp){
-        qDebug() << mExecutiveTime.elapsed() << mCnt;
         return jsonObject;
     }
 

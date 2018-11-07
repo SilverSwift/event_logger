@@ -1,7 +1,6 @@
 #include "abstractplayer.h"
 #include <QThread>
 
-#include <QDebug>
 
 AbstractPlayer::AbstractPlayer(AbstractSerializer *serializer, QObject *parent) :
      QObject(parent)
@@ -12,7 +11,6 @@ AbstractPlayer::AbstractPlayer(AbstractSerializer *serializer, QObject *parent) 
     connect(this, &AbstractPlayer::tryStop, this, &AbstractPlayer::onTryStop, Qt::QueuedConnection);
     this->moveToThread(pThread);
     pThread->start();
-    qDebug() << "constr AbstractPlayer";
 }
 
 AbstractPlayer::~AbstractPlayer()
@@ -24,12 +22,10 @@ AbstractPlayer::~AbstractPlayer()
 
 void AbstractPlayer::start()
 {
-    qDebug() << "emit start";
     emit tryStart(QPrivateSignal());
 }
 
 void AbstractPlayer::stop()
 {
-    qDebug() << "emit stop";
     emit tryStop(QPrivateSignal());
 }

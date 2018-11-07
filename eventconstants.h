@@ -28,5 +28,13 @@ const char windowY[] = "windowY";
 const char screenX[] = "screenX";
 const char screenY[] = "screenY";
 
+const char noneMode[] = "None";
+const char recordMode[] = "Record";
+const char playMode[] = "Play";
+
+const char modeError[] = "Application wodn't be started. Correct modes are None, Record and Play! For Play mode filename must be specified.\n";
+const char fileNameError[] = "Application wodn't be started. Filename is incorrect!\n";
+const char infoMessage[] = "Application will be started on specified paremeters. Application mode and filename: ";
+
 
 #endif // EVENTCONSTANTS_H

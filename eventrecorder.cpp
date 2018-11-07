@@ -1,11 +1,11 @@
 #include "eventrecorder.h"
 #include "eventconstants.h"
 #include "fileserializer.h"
+
 #include <QApplication>
-#include <QEvent>
 #include <QDebug>
+#include <QEvent>
 #include <QEnterEvent>
-#include <QFocusEvent>
 #include <QHoverEvent>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,12 +13,9 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QMoveEvent>
-#include <QPaintEvent>
-#include <QPointF>
 #include <QProcess>
 #include <QResizeEvent>
 #include <QWidget>
-
 
 EventRecorder::EventRecorder(AbstractSerializer* serializer, QObject *parent) :
     AbstractRecorder(serializer, parent)
@@ -52,6 +49,9 @@ void EventRecorder::stop()
     mRecording = false;
     qApp->removeEventFilter(this);
     pSerializer->write(QJsonDocument(jsonArray).toJson());
+
+    qDebug() << "Record mode was finished!";
+
 }
 
 QString EventRecorder::findParentObject(QObject *obj)
@@ -89,6 +89,10 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
     switch (event->type()) {
         case QEvent::ActivationChange: {
             break;
+        }
+
+        case QEvent::Close:  {
+        break;
         }
 
         case QEvent::Enter:{
@@ -132,12 +136,11 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             break;
         }
 
-        case QEvent::LayoutRequest:
         case QEvent::Leave:{
         break;
         }
 
-        case QEvent::Move: {
+        /*case QEvent::Move: {
             QMoveEvent *moveEvent = static_cast<QMoveEvent *>(event);
 
             eventObject.insert(::x, QJsonValue::fromVariant(moveEvent->pos().x()));
@@ -145,16 +148,16 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             eventObject.insert(oldX, QJsonValue::fromVariant(moveEvent->oldPos().x()));
             eventObject.insert(oldY, QJsonValue::fromVariant(moveEvent->oldPos().y()));
             break;
-        }
+        }*/
 
 
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
         case QEvent::MouseMove:
-        case QEvent::NonClientAreaMouseMove:
+        /*case QEvent::NonClientAreaMouseMove:
         case QEvent::NonClientAreaMouseButtonPress:
-        case QEvent::NonClientAreaMouseButtonRelease:{
+        case QEvent::NonClientAreaMouseButtonRelease:*/{
             QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
             eventObject.insert(mouseButton, QJsonValue::fromVariant(mouseEvent->button()));
             eventObject.insert(mouseButtons, QJsonValue::fromVariant(QVariant::fromValue(mouseEvent->buttons())));
@@ -165,7 +168,7 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             break;
         }
 
-        case QEvent::Resize: {
+        /*case QEvent::Resize: {
             QResizeEvent *resizeEvent = static_cast<QResizeEvent *>(event);
 
             eventObject.insert(::x, QJsonValue::fromVariant(resizeEvent->size().height()));
@@ -173,9 +176,8 @@ void EventRecorder::logInputEvent(QObject *watched, QEvent *event)
             eventObject.insert(oldX, QJsonValue::fromVariant(resizeEvent->oldSize().height()));
             eventObject.insert(oldY, QJsonValue::fromVariant(resizeEvent->oldSize().width()));
             break;
-        }
+        }*/
 
-        case QEvent::StyleAnimationUpdate:
         case QEvent::UpdateRequest:{
             break;
         }
@@ -201,12 +203,9 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
     if(watched->inherits("QWidgetWindow")||watched->inherits("QStyle"))
         return QObject::eventFilter(watched, event);
 
-    QString nameWidgetId = watched->property("widgetId").toString();
-
-    qDebug() << nameWidgetId << " " << event->type();
-
     switch (event->type()) {
         case QEvent::ActivationChange:
+        case QEvent::Close:
         case QEvent::Enter:
         case QEvent::FocusIn:
         case QEvent::FocusOut:
@@ -216,18 +215,16 @@ bool EventRecorder::eventFilter(QObject* watched, QEvent* event)
         case QEvent::HoverLeave:
         case QEvent::KeyPress:
         case QEvent::KeyRelease:
-        case QEvent::LayoutRequest:
         case QEvent::Leave:
-    case QEvent::Move:
+//    case QEvent::Move:
         case QEvent::MouseMove:
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
-        case QEvent::NonClientAreaMouseMove:
-        case QEvent::NonClientAreaMouseButtonPress:
-        case QEvent::NonClientAreaMouseButtonRelease:
-    case QEvent::Resize:
-        case QEvent::StyleAnimationUpdate:
+//        case QEvent::NonClientAreaMouseMove:
+//        case QEvent::NonClientAreaMouseButtonPress:
+//        case QEvent::NonClientAreaMouseButtonRelease:
+//    case QEvent::Resize:
         case QEvent::UpdateRequest:
         case QEvent::WindowActivate:
         case QEvent::WindowDeactivate:

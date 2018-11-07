@@ -1,14 +1,13 @@
 #include "mainwidget.h"
 
+#include <QApplication>
 #include <QComboBox>
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
+#include <QMenuBar>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QMenuBar>
-#include <QApplication>
-#include <QLineEdit>
 
 MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
 {
@@ -42,7 +41,6 @@ MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
         int v = value->text().toInt();
         int d = delta->currentIndex() + 1;
         value->setText(QString::number(v + d));
-        qDebug()<<"icrement!";
     });
 
     connect(reset, &QPushButton::clicked,
